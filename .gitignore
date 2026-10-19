@@ -1,0 +1,39 @@
+# Environnements et outils locaux
+.venv/
+venv/
+.tools/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# IDE et système
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Secrets et configuration locale
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Fichiers temporaires de validation visuelle
+*_check.png
+_check_*.png
+_preview_*.png
+
+# Sorties LaTeX intermédiaires
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc

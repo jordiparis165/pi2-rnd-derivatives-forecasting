@@ -1,0 +1,78 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\usepackage[backend=biber,style=authoryear,sorting=nyt,maxbibnames=99]{biblatex}
+
+\definecolor{esilvblue}{HTML}{153A5B}
+\definecolor{esilvcyan}{HTML}{1C7897}
+\hypersetup{colorlinks=true,linkcolor=esilvblue,urlcolor=esilvcyan,citecolor=esilvblue}
+\addbibresource{references.bib}
+
+\title{\textcolor{esilvblue}{Projet PI\textsuperscript{2} n\textsuperscript{o} 176}\\
+\Large Dynamic of RND and Forecasting the Price of Derivatives\\[0.4em]
+\large Bibliographie structurée}
+\author{Rayan Ait Arkoub, Matthieu Balliste, Ilan Chahdi,\\
+Nathan Denoux et Jordi Paris}
+\date{14 octobre 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Cette bibliographie couvre les cinq blocs du projet : constitution des données,
+estimation des distributions risque-neutre, mesure de leur stabilité, modélisation
+de leur dynamique et application à une stratégie de couverture ou de trading.
+Elle reprend les références de la fiche projet et les complète par les documents
+fournis par l'équipe et quelques sources directement utiles à l'implémentation.
+\end{abstract}
+
+\section*{Organisation des lectures}
+
+\begin{tabularx}{\textwidth}{@{}p{0.22\textwidth}X@{}}
+\toprule
+\textbf{Bloc} & \textbf{Références prioritaires} \\
+\midrule
+Fondements et extraction & Breeden et Litzenberger (1978) ; Figlewski (2010, 2018) \\
+Lissage et robustesse & Shimko (1993) ; Taboga (2016) ; BSIC (2026) \\
+Méthodes alternatives & Cui et Yu (2021) ; Cui, Liu et Yao (2025) \\
+Entropie et calibration & Cover et Thomas (1991) ; Avellaneda et al. (2001) \\
+Dynamique et prévision & Giacomini, Härdle et Krätschmer (2009) \\
+Application économique & Martin (2017) ; méthodologie VIX de Cboe \\
+\bottomrule
+\end{tabularx}
+
+\section*{Priorités de lecture}
+
+\begin{enumerate}
+  \item Figlewski (2018), pour cartographier l'ensemble du champ.
+  \item Breeden et Litzenberger (1978), pour le résultat théorique central.
+  \item BSIC (2026), Figlewski (2010) et Shimko (1993), pour le pipeline empirique.
+  \item Cui et Yu (2021), pour la comparaison avec une approche Fourier-cosinus.
+  \item Cover et Thomas (1991), puis Giacomini et al. (2009), pour la stabilité et la prévision.
+  \item Taboga (2016), Avellaneda et al. (2001) et Martin (2017), pour l'incertitude et l'application.
+\end{enumerate}
+
+\section*{Point méthodologique central}
+
+Pour une option européenne et un taux déterministe, l'identité de
+Breeden--Litzenberger relie la densité risque-neutre au prix du call :
+\[
+q_t(K,T)=e^{r(T-t)}\frac{\partial^2 C_t(K,T)}{\partial K^2}.
+\]
+La double dérivation amplifie le bruit des cotations. L'interpolation, le lissage
+sans arbitrage, le traitement des queues et les contrôles de cohérence probabiliste
+doivent donc faire partie intégrante du protocole expérimental.
+
+\nocite{*}
+\printbibliography[title={Références}]
+
+\end{document}

@@ -1,0 +1,11 @@
+PI2 n°176 — Livrables du premier suivi
+
+À envoyer en priorité :
+- Papier_recherche_PI2_176.pdf
+- Support_suivi_23-10-2026.pdf ou Support_suivi_23-10-2026.pptx
+
+Le papier de recherche remplace l'ancien rapport court.
+Le support contient 10 diapositives, dont une surface 3D des RND par maturité.
+
+Sources : papier_recherche_PI2_176.tex, references.bib, scripts Python/Julia.
+Le PDF est généré localement ; la source LaTeX se compile avec pdflatex/biber.

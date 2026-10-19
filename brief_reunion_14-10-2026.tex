@@ -1,0 +1,64 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage[a4paper,margin=2.2cm]{geometry}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\definecolor{esilvblue}{HTML}{153A5B}
+\hypersetup{colorlinks=true,urlcolor=esilvblue}
+\setlist{nosep,leftmargin=*}
+\pagestyle{plain}
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries\color{esilvblue} Projet PI\textsuperscript{2} n\textsuperscript{o} 176}\\[0.3em]
+{\large Brief de la réunion de lancement}\\[0.2em]
+Mercredi 14 octobre 2026, 16 h--16 h 30
+\end{center}
+
+\section*{Résultat attendu de la réunion}
+\begin{enumerate}
+  \item Valider le sous-jacent et la source de données historiques.
+  \item Fixer le périmètre : méthodes, maturités et cible couverture/trading.
+  \item Clarifier la part attendue de Julia ou OCaml.
+  \item Définir le premier prototype et le contenu du suivi du 23 octobre.
+  \item Confirmer l'envoi du rapport et du support le 20 octobre.
+\end{enumerate}
+
+\section*{Pitch de 45 secondes}
+\begin{quote}
+Notre objectif est d'extraire une série temporelle de distributions risque-neutre
+à partir de prix d'options, d'en comparer les méthodes de calibration, puis d'étudier
+leur stabilité et leur prévisibilité avant de tester une application de couverture
+ou de trading. Nous proposons de commencer par SPX à horizon proche de 30 jours,
+avec un baseline Breeden--Litzenberger en Julia, contrôlé par des tests de
+non-arbitrage et de cohérence probabiliste. Nous comparerons ensuite ce baseline à
+la méthode Fourier-cosinus et utiliserons un modèle factoriel pour la dynamique.
+\end{quote}
+
+\section*{Cinq questions indispensables}
+\begin{enumerate}
+  \item Avons-nous accès à OptionMetrics/WRDS, Cboe, Bloomberg ou Refinitiv ?
+  \item Validez-vous SPX et une échéance constante proche de 30 jours pour le MVP ?
+  \item Faut-il implémenter les trois méthodes de calibration ou en approfondir deux ?
+  \item Que signifie précisément « une part substantielle en Julia ou OCaml » ?
+  \item La cible finale prioritaire est-elle la couverture, le trading, ou les deux ?
+\end{enumerate}
+
+\section*{Proposition pour le suivi du 23 octobre}
+Bibliographie structurée ; source ou schéma définitif des données ; prototype
+Breeden--Litzenberger ; graphiques de smile, calls et densité ; contrôles de
+positivité, masse, moyenne/forward et convexité ; protocole de comparaison avec
+Fourier ; planning et responsabilités.
+
+\section*{À ne pas promettre}
+Une stratégie rentable avant test hors échantillon et coûts ; une RND fiable à
+partir de prix bruts ; le TTF sans accès confirmé aux données ICE ; une probabilité
+« réelle », puisque la RND incorpore aussi les prix du risque.
+
+\end{document}

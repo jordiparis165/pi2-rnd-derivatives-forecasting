@@ -1,0 +1,33 @@
+{
+  "source": "https://cdn.cboe.com/api/global/delayed_quotes/options/_SPX.json",
+  "raw_file": "data\\raw\\cboe_spx_20261019_164305.json",
+  "quote_timestamp": "2026-10-19 16:43:05",
+  "spot": 7708.52,
+  "selected_expiry": "2027-01-15",
+  "maturity_days": 88,
+  "selected_contracts_before_filtering": 1570,
+  "valid_contract_quotes": 1396,
+  "matched_call_put_strikes": 366,
+  "calibration_points": 342,
+  "forward_from_parity": 7779.201495830067,
+  "discount_factor_from_parity": 0.9885292313505321,
+  "implied_continuous_rate": 0.04785260075209974,
+  "put_call_parity_rmse": 0.07384770799089443,
+  "svi_parameters": {
+    "a": -0.028999570589335884,
+    "b": 0.11828868577128562,
+    "rho": -0.07981709377075603,
+    "m": 0.06905734397815433,
+    "sigma": 0.27134437182420273
+  },
+  "svi_least_squares_cost": 1.2260101095960814e-06,
+  "call_price_rmse": 1.324727836406641,
+  "raw_density_mass_on_grid": 0.9955434288127656,
+  "positive_density_mass_before_normalization": 0.995629619851363,
+  "negative_grid_fraction": 0.20174890693316677,
+  "material_negative_grid_fraction_below_0.1pct_peak": 0.0,
+  "absolute_negative_mass": 8.619103859746153e-05,
+  "minimum_raw_density": -6.829657311935092e-08,
+  "maximum_raw_density": 0.000980266878496498,
+  "normalized_density_mean": 7798.315925837292
+}

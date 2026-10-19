@@ -1,0 +1,8 @@
+discount_factor=0.988367766181
+raw_density_mass_on_grid=0.995274138253
+positive_mass_before_normalization=0.995390834528
+negative_grid_fraction=0.203622735790
+material_negative_grid_fraction_below_0.1pct_peak=0.000000000000
+absolute_negative_mass=0.000116696275
+normalized_density_mean=7776.238751066900
+normalized_density_std=590.513875637338
