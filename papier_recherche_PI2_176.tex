@@ -5,41 +5,23 @@
 \usepackage{lmodern,microtype}
 \usepackage[a4paper,margin=2.5cm]{geometry}
 \usepackage{amsmath,amssymb,booktabs,tabularx,graphicx,float,caption,subcaption}
-\usepackage{xcolor,hyperref}
-\usepackage[backend=biber,style=authoryear,sorting=nyt,maxbibnames=99]{biblatex}
-\addbibresource{references.bib}
-\definecolor{paperblue}{HTML}{153A5B}
-\hypersetup{colorlinks=true,linkcolor=paperblue,citecolor=paperblue,urlcolor=paperblue}
+\graphicspath{{results/}{../results/}}
+\usepackage{hyperref}
+\usepackage[authoryear,round]{natbib}
+\hypersetup{hidelinks}
 \captionsetup{font=small,labelfont=bf}
+\numberwithin{equation}{section}
+\setcounter{secnumdepth}{2}
 
 \title{\textbf{Estimation et dynamique des distributions risque-neutre à partir d'options SPX}\\[0.4em]
-\large Projet PI\textsuperscript{2} n\textsuperscript{o} 176 — Premier rapport de recherche}
+\large Projet PI\textsuperscript{2} n\textsuperscript{o} 176 -- Premier rapport de recherche}
 \author{Rayan Ait Arkoub \and Matthieu Balliste \and Ilan Chahdi \and Nathan Denoux \and Jordi Paris\\
-\small ESILV — Pôle Léonard de Vinci\\
+\small ESILV -- Pôle Léonard de Vinci\\
 \small Tuteur : Matthieu Garcin}
 \date{20 octobre 2026}
 
 \begin{document}
 \maketitle
-
-\begin{abstract}
-Nous développons un pipeline reproductible d'estimation de distributions risque-neutre
-(RND) à partir d'options sur l'indice S\&P 500. Une photographie différée de Cboe du
-16 octobre 2026 est nettoyée, puis le forward et le facteur d'actualisation sont estimés
-par parité call-put. Une paramétrisation SVI à cinq paramètres fournit une coupe de
-volatilité commune à l'ensemble des strikes. La densité est ensuite extraite par la
-relation de Breeden--Litzenberger et calculée indépendamment en Python et en Julia.
-Pour l'échéance à 91 jours, 338 observations alimentent la calibration, la RMSE de prix
-vaut 1,144 point d'indice et la masse brute de densité atteint 0,9953 sur la grille.
-Nous étendons l'exercice à six maturités comprises entre 31 et 182 jours et construisons
-une surface tridimensionnelle des RND en log-moneyness. Cette surface décrit la structure
-par terme à une date donnée ; l'étude dynamique temporelle nécessitera un historique
-quotidien Bloomberg, OptionMetrics ou Cboe DataShop.
-\end{abstract}
-
-\noindent\textbf{Mots-clés :} distribution risque-neutre, options SPX, Breeden--Litzenberger,
-SVI, volatilité implicite, structure par terme, Julia.\\
-\textbf{Codes JEL :} C14, C58, G13, G17.
 
 \section{Introduction}
 Les prix d'options contiennent une information prospective sur la distribution du
@@ -48,49 +30,147 @@ une volatilité unique devrait expliquer tous les strikes. L'existence empirique
 smile invalide cette restriction. Une volatilité implicite peut ajuster chaque option
 séparément, mais ne constitue pas un modèle commun parcimonieux de la chaîne.
 
-Ce projet poursuit cinq objectifs : constituer une base historique, comparer trois
-méthodes d'extraction de RND, mesurer leur stabilité, prévoir leur dynamique au moyen
-d'un modèle factoriel et tester une application à la couverture. Le présent article
-documente le premier jalon : une estimation complète sur SPX, sa validation Julia et
-une extension tridimensionnelle selon la maturité.
+La question générale du projet est la suivante : peut-on résumer puis prévoir l'évolution
+de la distribution risque-neutre du SPX de manière suffisamment stable pour améliorer
+la valorisation ou la couverture d'options ? Nous décomposons cette question en cinq
+étapes : constitution d'une base historique, comparaison de trois méthodes d'extraction,
+mesure de la stabilité, prévision factorielle de la densité et évaluation hors échantillon
+d'une stratégie de couverture. Le présent article documente le premier jalon : une
+estimation complète sur SPX, sa réplication indépendante en Julia et une extension
+tridimensionnelle selon la maturité.
+
+Notre contribution à ce stade est méthodologique. Nous construisons un chemin entièrement
+reproductible entre cotations brutes et densité, nous séparons clairement le lissage de
+la smile de l'opérateur d'extraction de la RND, et nous définissons les diagnostics qui
+permettront ensuite de comparer les méthodes sur un même échantillon. La surface obtenue
+sur plusieurs maturités est une structure par terme observée à une date fixe ; elle ne
+doit pas encore être interprétée comme une dynamique temporelle.
 
 \section{Revue de littérature}
-\textcite{breeden_litzenberger_1978} relient les prix d'états à la dérivée seconde des
-calls. \textcite{figlewski_2010} et \textcite{figlewski_2018} soulignent les difficultés
-empiriques : bruit bid-ask, interpolation, support fini et queues. \textcite{cui_yu_2021}
-proposent une alternative Fourier-cosinus reposant sur l'intégration plutôt que la
-double dérivation. \textcite{avellaneda_et_al_2001} construisent une mesure calibrée
-par minimisation d'entropie relative. Pour la dynamique, \textcite{giacomini_et_al_2009}
-réduisent les densités en facteurs semiparamétriques, tandis que \textcite{taboga_2016}
-étudie l'incertitude et le risque de multimodalité artificielle.
+\subsection{Des prix d'options aux prix d'états}
+Le point de départ est \citet{breeden_litzenberger_1978}. Leur résultat ne consiste
+pas simplement à ajuster une loi lognormale : il rend opérationnelle l'approche par
+prix d'états. Un portefeuille de calls européens de même échéance et de strikes voisins
+permet d'isoler un paiement sur un intervalle étroit de valeurs terminales. Lorsque la
+fonction de prix est deux fois dérivable, le passage à la limite identifie le prix de
+l'état élémentaire à sa dérivée seconde par rapport au strike. La densité risque-neutre
+est ensuite obtenue en retirant l'actualisation. Le résultat est donc non paramétrique
+vis-à-vis de la dynamique du sous-jacent, mais son application suppose une fonction de
+prix continue, convexe et suffisamment régulière --- propriétés que les cotations
+discrètes et bruitées ne vérifient pas automatiquement.
+
+\subsection{Lissage, support fini et absence d'arbitrage}
+\citet{shimko_1993} propose de lisser la volatilité implicite en fonction du strike
+avant de reconstruire les prix, plutôt que de dériver directement les observations.
+Cette idée est centrale dans notre prototype : la double dérivation porte sur une coupe
+SVI commune, pas sur les mids bruts. Elle déplace toutefois le problème vers le choix de
+la forme fonctionnelle et l'extrapolation au-delà des strikes liquides.
+
+À partir d'options sur le portefeuille de marché américain, \citet{figlewski_2010}
+montre que le traitement des queues n'est pas un détail numérique : un support observé
+fini ne contient généralement pas toute la masse de probabilité. Il combine une zone
+centrale extraite des options avec des prolongements de queue et recommande de contrôler
+la positivité, l'intégrale de la densité et la cohérence de sa moyenne avec le forward.
+La synthèse de \citet{figlewski_2018} insiste en outre sur la distinction économique
+entre densité risque-neutre et densité physique : la première agrège croyances et prix
+du risque. Elle convient directement au pricing, mais ne constitue pas sans hypothèse
+supplémentaire une prévision des fréquences réellement observées.
+
+\subsection{Deux familles alternatives d'estimation}
+La méthode Fourier-cosinus de \citet{cui_yu_2021} remplace la double dérivation locale
+par des intégrales de prix d'options qui identifient les coefficients d'une expansion
+COS. Cette formulation est potentiellement moins sensible au bruit ponctuel, mais reste
+dépendante du domaine de troncature, du nombre de termes et de la qualité de l'intégration
+sur des strikes irréguliers. Le prolongement récent de \citet{cui_liu_yao_2025}
+cible directement la fonction de répartition et les quantiles implicites ; il sera utile
+pour évaluer les queues sans faire reposer toute l'analyse sur les moments.
+
+\citet{avellaneda_et_al_2001} suivent une logique différente. Leur méthode de
+\emph{Weighted Monte Carlo} part d'une distribution de scénarios et modifie leurs poids
+afin de reproduire les prix observés, tout en minimisant l'entropie relative par rapport
+aux poids initiaux. La densité calibrée demeure positive et respecte les contraintes de
+prix introduites, mais le résultat dépend du prior simulé et du choix des instruments.
+Cette approche fournira notre troisième estimateur : Breeden--Litzenberger, COS et
+repondération entropique seront comparés avec les mêmes dates, maturités et filtres.
+
+\subsection{Dynamique des densités et incertitude d'estimation}
+Une série de RND est un objet fonctionnel : une régression séparée pour chaque point de
+grille ignorerait la forte dépendance entre strikes et produirait trop de paramètres.
+\citet{giacomini_et_al_2009} répondent à ce problème par un modèle factoriel
+semiparamétrique dynamique. Les densités sont résumées par un faible nombre de facteurs
+et la dynamique est portée par leurs scores. Cette architecture motive notre séquence
+future : grille commune, réduction de dimension, modèle AR ou VAR sur les scores, puis
+reconstruction d'une densité prévue.
+
+Enfin, \citet{taboga_2016} montre qu'une densité apparemment précise peut être très
+irrégulière et que des modes secondaires peuvent provenir de l'erreur d'observation ou
+du sur-ajustement plutôt que d'une information économique. Nous ne jugerons donc pas une
+méthode sur la seule erreur de calibration. Des bandes d'incertitude, des perturbations
+des prix à l'intérieur du bid-ask et des mesures globales de distance seront nécessaires.
+Les divergences informationnelles seront interprétées avec les précautions rappelées par
+\citet{cover_thomas_1991}, notamment lorsque la densité de référence devient proche
+de zéro. Pour l'application économique, \citet{martin_2017} illustre enfin comment
+des quantités extraites des options peuvent informer le rendement attendu ; cela motive
+un test de stratégie, sans confondre pouvoir prédictif statistique et performance nette
+du risque et des coûts.
+
+\subsection{Positionnement du projet}
+La littérature conduit à quatre choix. Premièrement, Breeden--Litzenberger constitue le
+benchmark transparent. Deuxièmement, le lissage doit précéder la dérivation et être
+contrôlé par des conditions d'arbitrage. Troisièmement, toute comparaison de méthodes
+doit conserver exactement le même univers de cotations. Quatrièmement, l'étude dynamique
+doit séparer l'incertitude d'estimation à chaque date de l'incertitude de prévision des
+facteurs. Le prototype présenté ci-dessous met en place les deux premiers choix ; les
+deux suivants structurent la collecte Bloomberg et l'évaluation hors échantillon.
 
 \section{Cadre théorique}
 Sous la mesure risque-neutre $\mathbb{Q}$,
 \begin{equation}
-C_t(K,T)=D(t,T)\,\mathbb{E}^{\mathbb{Q}}_t[(S_T-K)^+].
+  C_t(K,T)
+  = D(t,T)\,
+    \mathbb{E}^{\mathbb{Q}}_t\!\left[\left(S_T-K\right)^{+}\right].
+  \label{eq:call-price}
 \end{equation}
-La relation de Breeden--Litzenberger est
+où $D(t,T)$ désigne le facteur d'actualisation entre $t$ et $T$. Sous les
+conditions de régularité usuelles, la relation de Breeden--Litzenberger s'écrit
 \begin{equation}
-q_t(K,T)=\frac{1}{D(t,T)}\frac{\partial^2 C_t(K,T)}{\partial K^2}.
+  q_t(K,T)
+  = \frac{1}{D(t,T)}
+    \frac{\partial^2 C_t(K,T)}{\partial K^2}.
+  \label{eq:bl-density}
 \end{equation}
 La parité call-put permet d'estimer simultanément le forward et l'actualisation :
 \begin{equation}
-C_t(K,T)-P_t(K,T)=D(t,T)[F_{t,T}-K].
+  C_t(K,T)-P_t(K,T)
+  = D(t,T)\left(F_{t,T}-K\right).
+  \label{eq:put-call-parity}
 \end{equation}
 
 Pour lisser la coupe, nous utilisons la variance totale SVI brute
 \begin{equation}
-w(k)=a+b\left[\rho(k-m)+\sqrt{(k-m)^2+\sigma^2}\right],
-\qquad k=\log(K/F).
+  w(k)
+  = a+b\left[\rho(k-m)+\sqrt{(k-m)^2+\sigma^2}\right],
+  \qquad
+  k=\log\!\left(\frac{K}{F_{t,T}}\right).
+  \label{eq:svi}
 \end{equation}
 Cette étape fournit un modèle commun à cinq paramètres. Elle ne remplace pas
 Breeden--Litzenberger : elle construit la fonction de prix régulière à dériver.
 
 \section{Données}
-La source est l'API publique différée de Cboe. La photographie principale est datée
-du 16 octobre 2026 à 17:12:17. L'accès Bloomberg n'est pas disponible dans
-l'environnement actuel. L'API publique ne fournit pas l'historique requis pour la
-dynamique ; ce point constitue la principale dépendance externe.
+Le prototype utilise l'API publique différée de Cboe. La photographie principale est
+datée du 16 octobre 2026 à 17:12:17. Cette source gratuite est adaptée à la validation
+du nettoyage, de la calibration SVI et de l'extraction de la densité sur une coupe.
+Elle est toutefois limitée à des photographies différées et ne fournit pas l'historique
+quotidien homogène requis pour estimer puis tester une dynamique de RND.
+
+Lorsque le projet passera à la prévision temporelle et à la stratégie de couverture,
+nous constituerons donc la base principale à partir de Bloomberg. L'objectif sera
+d'extraire, pour chaque date, les options SPX, leurs bid et ask, volumes, intérêts
+ouverts, maturités et horodatages, ainsi que les variables de marché nécessaires. Cboe
+reste la source ouverte du prototype et un point de contrôle ; Bloomberg deviendra la
+source de l'étude historique et du backtest, précisément parce que l'API gratuite de
+Cboe ne couvre pas ce besoin.
 
 \begin{table}[H]\centering
 \caption{Échantillon principal SPX.}
@@ -106,13 +186,22 @@ Points de calibration & 338 \\
 \end{table}
 
 \section{Méthodologie empirique}
+\subsection{Nettoyage et construction des prix synthétiques}
 Nous sélectionnons l'échéance la plus proche de l'horizon cible. Les cotations avec
 bid nul, marché croisé, mid inférieur à 0,05 ou spread relatif supérieur à 35\,\%
 sont écartées. Le mid est privilégié au dernier prix, dont l'horodatage sert seulement
 de diagnostic. Une régression pondérée de la parité autour de la monnaie estime $F$
 et $D$. Les calls OTM sont utilisés au-dessus du forward ; sous le forward, les puts
-OTM sont transformés en calls synthétiques. Les volatilités implicites sont calibrées
-par SVI, les calls reconstruits sur 1 601 strikes et la dérivée seconde calculée.
+OTM sont transformés en calls synthétiques au moyen de l'équation
+\eqref{eq:put-call-parity}.
+
+\subsection{Calibration et extraction de la densité}
+Les volatilités implicites sont calculées par inversion de la formule de Black--Scholes
+en représentation forward, puis la variance totale est ajustée par l'équation
+\eqref{eq:svi}. Les calls sont reconstruits sur une grille de 1 601 strikes et la
+dérivée seconde de l'équation \eqref{eq:bl-density} est approchée par différences finies.
+Nous contrôlons la convexité des prix, la masse de la densité, sa part négative, sa
+moyenne et l'erreur de reconstruction des options.
 
 \begin{figure}[H]\centering
 \includegraphics[width=0.94\textwidth]{results/01_data_quality.png}
@@ -146,7 +235,9 @@ Nous répétons le pipeline sur six maturités : 31, 63, 91, 126, 154 et 182 jou
 Pour rendre les distributions comparables, elles sont exprimées en log-moneyness.
 La densité transformée est
 \begin{equation}
-q_k(k)=q_S(F e^k)F e^k.
+  q_k(k)
+  = q_S\!\left(F_{t,T}e^k\right)F_{t,T}e^k.
+  \label{eq:change-variable}
 \end{equation}
 
 \begin{figure}[H]\centering
@@ -170,7 +261,7 @@ Le calcul de dérivée, masse, normalisation et moments est réimplémenté en J
 et l'écart maximal $2,1\times10^{-6}$, localisé aux bords de la grille.
 
 \section{Vers une dynamique temporelle}
-Avec un historique quotidien, chaque date produira une densité à horizon constant.
+Avec l'historique quotidien Bloomberg, chaque date produira une densité à horizon constant.
 Les densités seront placées sur une grille commune, puis réduites par analyse
 factorielle fonctionnelle. Les scores pourront suivre un AR ou un VAR. Les prévisions
 seront comparées à une marche aléatoire fonctionnelle, c'est-à-dire la densité du jour
@@ -181,7 +272,9 @@ ne doit pas être confondue avec la surface par maturité présentée dans cet a
 
 \section{Application future à la couverture}
 Nous comparerons une couverture fondée sur la RND courante, une couverture utilisant
-la RND prévue et un benchmark Black--Scholes. Les critères seront l'erreur de
+la RND prévue et un benchmark Black--Scholes. Les prix historiques Bloomberg seront
+utilisés pour construire le signal, rééquilibrer les positions et mesurer la performance
+hors échantillon. Les critères seront l'erreur de
 couverture, sa variance, le drawdown et les coûts de transaction. L'incertitude de
 prévision devra limiter l'agressivité des positions.
 
@@ -195,7 +288,7 @@ moment toute conclusion sur la stabilité ou le pouvoir prédictif des RND.
 Le premier prototype relie une chaîne SPX réelle à une densité contrôlée et
 reproductible. Les résultats Python et Julia concordent. L'extension à six maturités
 offre une première représentation tridimensionnelle économiquement interprétable.
-Le prochain jalon essentiel est l'acquisition d'un historique quotidien permettant
+Le prochain jalon essentiel est l'acquisition de l'historique quotidien Bloomberg permettant
 de remplacer l'axe de maturité par un axe temporel et d'estimer les facteurs dynamiques.
 
 \appendix
@@ -205,5 +298,6 @@ diagnostics, figures et commandes d'exécution. Le script principal est
 \texttt{run\_prototype.ps1}. La surface 3D est produite par
 \texttt{src/rnd\_surface\_3d.py}.
 
-\printbibliography
+\bibliographystyle{apalike}
+\bibliography{references}
 \end{document}

@@ -23,6 +23,7 @@ Thumbs.db
 *.key
 
 # Fichiers temporaires de validation visuelle
+.paper_preview/
 *_check.png
 _check_*.png
 _preview_*.png
