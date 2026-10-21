@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib import cm
+from scipy.interpolate import PchipInterpolator
 
 from spx_breeden_litzenberger import (
     calibrate_svi,
@@ -107,17 +108,84 @@ def main():
     X, Y = np.meshgrid(x, y)
     Z = pivot.to_numpy(float)
 
+    # Interpolation uniquement graphique entre les maturités effectivement
+    # calibrées. PCHIP évite les oscillations que produirait une spline cubique
+    # sur seulement six coupes. Chaque coupe intermédiaire est renormalisée.
+    y_smooth = np.linspace(y.min(), y.max(), 90)
+    z_smooth = PchipInterpolator(y, Z, axis=0)(y_smooth)
+    z_smooth = np.maximum(z_smooth, 0.0)
+    z_smooth /= np.trapezoid(z_smooth, x, axis=1)[:, None]
+    X_smooth, Y_smooth = np.meshgrid(x, y_smooth)
+
     plt.style.use("seaborn-v0_8-whitegrid")
-    fig = plt.figure(figsize=(11.5, 7.2))
+    fig = plt.figure(figsize=(12.6, 7.6), facecolor="white")
     ax = fig.add_subplot(111, projection="3d")
-    surf = ax.plot_surface(X, Y, Z, cmap=cm.viridis, linewidth=0.15, edgecolor=(1, 1, 1, 0.25), antialiased=True, alpha=0.95)
-    ax.set_xlabel("Log-moneyness  log(K/F)", labelpad=10)
-    ax.set_ylabel("Maturité (jours)", labelpad=10)
-    ax.set_zlabel("Densité de log-moneyness", labelpad=9)
-    ax.set_title(f"Structure par terme des densités risque-neutre SPX\nSnapshot Cboe du {stamp:%d/%m/%Y}", pad=18, color="#153A5B", fontweight="bold")
-    ax.view_init(elev=27, azim=-132)
-    fig.colorbar(surf, ax=ax, shrink=0.62, pad=0.09, label="Densité")
-    fig.text(0.5, 0.015, "Surface selon la maturité — ne constitue pas encore une dynamique temporelle", ha="center", fontsize=9, color="#60717D")
+    surf = ax.plot_surface(
+        X_smooth,
+        Y_smooth,
+        z_smooth,
+        cmap=cm.viridis,
+        rcount=len(y_smooth),
+        ccount=150,
+        linewidth=0,
+        antialiased=True,
+        alpha=0.88,
+        shade=True,
+    )
+
+    # Les lignes sombres matérialisent les six coupes réellement calibrées ;
+    # la surface colorée située entre elles n'est qu'une aide visuelle.
+    for maturity, density_slice in zip(y, Z):
+        ax.plot(
+            x,
+            np.full_like(x, maturity),
+            density_slice,
+            color="#17202A",
+            linewidth=1.25,
+            alpha=0.92,
+            zorder=5,
+        )
+
+    ax.contourf(
+        X_smooth,
+        Y_smooth,
+        z_smooth,
+        zdir="z",
+        offset=0,
+        levels=18,
+        cmap=cm.viridis,
+        alpha=0.34,
+    )
+    ax.set_xlabel(r"Log-moneyness  $k=\log(K/F)$", labelpad=12)
+    ax.set_ylabel("Maturité (jours)", labelpad=12)
+    ax.set_zlabel(r"Densité $q_k(k)$", labelpad=9)
+    ax.set_title(
+        f"Structure par terme des densités risque-neutre SPX\n"
+        f"Snapshot Cboe du {stamp:%d/%m/%Y}",
+        pad=16,
+        color="#111111",
+        fontsize=17,
+        fontweight="bold",
+    )
+    ax.set_yticks(y)
+    ax.set_zlim(bottom=0)
+    ax.view_init(elev=29, azim=-126)
+    ax.set_box_aspect((1.55, 1.05, 0.72))
+    for axis in (ax.xaxis, ax.yaxis, ax.zaxis):
+        axis.pane.set_facecolor((0.97, 0.97, 0.97, 1.0))
+        axis.pane.set_edgecolor((0.82, 0.82, 0.82, 1.0))
+    ax.grid(True, alpha=0.28)
+    colorbar = fig.colorbar(surf, ax=ax, shrink=0.68, pad=0.075, aspect=24)
+    colorbar.set_label(r"Densité $q_k(k)$", rotation=90, labelpad=11)
+    fig.text(
+        0.5,
+        0.018,
+        "Lignes noires : maturités calibrées  •  Surface : interpolation visuelle PCHIP  •  Date d’observation fixe",
+        ha="center",
+        fontsize=9.2,
+        color="#333333",
+    )
+    fig.subplots_adjust(left=0.02, right=0.91, top=0.86, bottom=0.09)
     fig.savefig(RESULTS / "05_rnd_surface_3d_maturity.png", dpi=220, bbox_inches="tight")
     plt.close(fig)
 
