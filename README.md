@@ -25,6 +25,12 @@ Le pipeline actuel :
 
 Les résultats déjà calculés se trouvent dans [`results/`](results/) et les livrables du premier suivi dans [`Livrables_suivi_23-10-2026/`](Livrables_suivi_23-10-2026/).
 
+Le support final du suivi et son script oral sont reproductibles avec :
+
+```powershell
+python generate_presentation_finale.py
+```
+
 ## Démarrage rapide
 
 Prérequis : Python 3.11 ou plus récent. Julia 1.10 est facultatif pour la réplication indépendante.

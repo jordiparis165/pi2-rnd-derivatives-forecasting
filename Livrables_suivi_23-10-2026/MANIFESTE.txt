@@ -5,7 +5,13 @@ PI2 n°176 — Livrables du premier suivi
 - Support_suivi_23-10-2026.pdf ou Support_suivi_23-10-2026.pptx
 
 Le papier de recherche remplace l'ancien rapport court.
-Le support contient 10 diapositives, dont une surface 3D des RND par maturité.
+Le support final contient 11 diapositives académiques : équations, diagnostics,
+surface 3D, fiabilité par maturité et modèle factoriel futur.
 
-Sources : papier_recherche_PI2_176.tex, references.bib, scripts Python/Julia.
-Le PDF est généré localement ; la source LaTeX se compile avec pdflatex/biber.
+Pour préparer l'oral :
+- Script_oral_suivi_23-10-2026.pdf
+- Notes_orales_suivi_23-10-2026.md
+
+Sources : papier_recherche_PI2_176.tex, references.bib,
+generate_presentation_finale.py et scripts Python/Julia.
+Le papier est composé depuis la source LaTeX avec Tectonic/BibTeX.
